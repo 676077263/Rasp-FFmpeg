@@ -1,6 +1,9 @@
 name: Build FFmpeg for Raspberry Pi 4B
 
-on: [push]
+on: 
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,15 +14,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup environment
+      run: |
+        echo "DEBIAN_FRONTEND=noninteractive" >> $GITHUB_ENV
+        echo "HOME=/github/home" >> $GITHUB_ENV
+
     - name: Install dependencies
       run: |
         apt-get update -qq
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
           autoconf automake build-essential cmake git libtool \
           libomxil-bellagio-dev libx264-dev libx265-dev libvpx-dev \
           libmp3lame-dev libopus-dev libvorbis-dev libfreetype6-dev \
           yasm pkg-config meson ninja-build libdrm-dev \
-          libssl-dev zlib1g-dev
+          libssl-dev zlib1g-dev ca-certificates
 
     - name: Clone FFmpeg
       run: |
@@ -57,16 +65,22 @@ jobs:
           --disable-stripping \
           --enable-lto
 
-        make -j$(nproc)
+        make -j$(($(nproc) + 1))
         make install DESTDIR="$HOME/ffmpeg_install"
 
-    - name: Package artifacts
+    - name: Create package
       run: |
         mkdir -p artifacts
         tar -czvf artifacts/ffmpeg_rpi4b.tar.gz -C $HOME/ffmpeg_install usr/local
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ffmpeg_rpi4b_build
         path: artifacts/ffmpeg_rpi4b.tar.gz
+        retention-days: 7
+
+    - name: Notify completion
+      if: always()
+      run: |
+        echo "FFmpeg build completed! Download the artifact from GitHub Actions."
