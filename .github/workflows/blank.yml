@@ -1,6 +1,6 @@
 name: Build FFmpeg for Raspberry Pi 4B
 
-on: 
+on:
   push:
     branches: [ main ]
   workflow_dispatch:
@@ -8,13 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 45
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Setup QEMU for ARM
-      uses: docker/setup-qemu-action@v3
 
     - name: Install dependencies
       run: |
@@ -27,12 +25,12 @@ jobs:
           libssl-dev zlib1g-dev ca-certificates \
           crossbuild-essential-arm64
 
-    - name: Clone FFmpeg
+    - name: Clone FFmpeg (with specific version)
       run: |
-        git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git
+        git clone --depth 1 --branch n6.1.1 https://github.com/FFmpeg/FFmpeg.git
         cd FFmpeg
 
-    - name: Configure and Build
+    - name: Configure FFmpeg
       run: |
         cd FFmpeg
         ./configure \
@@ -61,11 +59,16 @@ jobs:
           --enable-neon \
           --enable-hardcoded-tables \
           --disable-stripping \
-          --enable-lto \
-          --host=aarch64-linux-gnu \
-          --cross-prefix=aarch64-linux-gnu-
+          --enable-lto || { cat config.log; exit 1; }
 
-        make -j$(($(nproc) + 1))
+    - name: Build FFmpeg
+      run: |
+        cd FFmpeg
+        make -j$(($(nproc) + 1)) || { echo "Build failed"; exit 1; }
+
+    - name: Install to staging
+      run: |
+        cd FFmpeg
         make install DESTDIR="$HOME/ffmpeg_install"
 
     - name: Create package
