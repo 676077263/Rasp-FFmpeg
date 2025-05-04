@@ -1,36 +1,72 @@
-name: RaspberryPi Cross-Compile
+name: Build FFmpeg for Raspberry Pi 4B
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-    env:
-      CC: aarch64-linux-gnu-gcc
-      CXX: aarch64-linux-gnu-g++
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install full toolchain
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          build-essential \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+          binutils-aarch64-linux-gnu \
+          libc6-dev-arm64-cross \
+          qemu-user-static \
+          crossbuild-essential-arm64
+
+    - name: Setup sysroot
+      run: |
+        sudo mkdir -p /usr/aarch64-linux-gnu
+        sudo ln -s /usr/aarch64-linux-gnu/lib /usr/lib/aarch64-linux-gnu
+        sudo ln -s /usr/include /usr/aarch64-linux-gnu/include
+
+    - name: Clone FFmpeg
+      run: |
+        git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
+        cd FFmpeg
+
+    - name: Configure FFmpeg
+      run: |
+        cd FFmpeg
+        export CC="aarch64-linux-gnu-gcc"
+        export CXX="aarch64-linux-gnu-g++"
+        export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
+        
+        ./configure \
+          --prefix="/usr/local" \
+          --enable-cross-compile \
+          --cross-prefix=aarch64-linux-gnu- \
+          --target-os=linux \
+          --arch=aarch64 \
+          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3 -I/usr/aarch64-linux-gnu/include" \
+          --extra-ldflags="-L/usr/aarch64-linux-gnu/lib" \
+          --sysroot=/usr/aarch64-linux-gnu \
+          --enable-shared \
+          --enable-pic \
+          --enable-gpl \
+          --enable-version3 \
+          --enable-nonfree || { cat ffbuild/config.log; exit 1; }
+
+    - name: Build and package
+      run: |
+        cd FFmpeg
+        make -j$(nproc)
+        make install DESTDIR=./install
+        tar -czvf ../ffmpeg_build.tar.gz -C ./install .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
-        path: src  # 显式定义代码路径
-
-    - name: Validate files
-      run: |
-        if [ ! -f "src/CMakeLists.txt" ]; then
-          echo "##[error]CMakeLists.txt missing in src/"
-          ls -R src/
-          exit 1
-        fi
-
-    - name: Setup toolchain
-      run: |
-        sudo apt-get install -y gcc-aarch64-linux-gnu
-
-    - name: Configure CMake
-      run: |
-        cmake -B build -S src \
-          -DCMAKE_TOOLCHAIN_FILE=src/cmake/aarch64-toolchain.cmake
-
-    - name: Build
-      run: cmake --build build -j $(nproc)
+        name: ffmpeg_rpi4_build
+        path: ffmpeg_build.tar.gz
