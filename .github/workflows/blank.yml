@@ -23,17 +23,26 @@ jobs:
           libmp3lame-dev libopus-dev libvorbis-dev libfreetype6-dev \
           yasm pkg-config meson ninja-build libdrm-dev \
           libssl-dev zlib1g-dev ca-certificates \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+          binutils-aarch64-linux-gnu
 
-    - name: Clone FFmpeg (stable release)
+    - name: Clone FFmpeg
       run: |
         git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
         cd FFmpeg
 
-    - name: Run configure with debug
+    - name: Setup environment
+      run: |
+        echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+        echo "CXX=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+        echo "AR=aarch64-linux-gnu-ar" >> $GITHUB_ENV
+        echo "LD=aarch64-linux-gnu-ld" >> $GITHUB_ENV
+        echo "RANLIB=aarch64-linux-gnu-ranlib" >> $GITHUB_ENV
+        echo "STRIP=aarch64-linux-gnu-strip" >> $GITHUB_ENV
+
+    - name: Configure FFmpeg
       run: |
         cd FFmpeg
-        set -x  # 开启调试输出
         ./configure \
           --prefix="/usr/local" \
           --enable-shared \
@@ -57,12 +66,13 @@ jobs:
           --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3" \
           --extra-ldflags="-L/opt/vc/lib" \
           --arch=aarch64 \
+          --target-os=linux \
+          --enable-cross-compile \
+          --cross-prefix=aarch64-linux-gnu- \
           --enable-neon \
           --enable-hardcoded-tables \
           --disable-stripping \
-          --enable-lto
-        set +x
-        ls -la  # 显示生成的文件
+          --enable-lto || { cat ffbuild/config.log; exit 1; }
 
     - name: Build FFmpeg
       run: |
