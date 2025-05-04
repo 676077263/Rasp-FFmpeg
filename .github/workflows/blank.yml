@@ -1,87 +1,29 @@
-name: Build FFmpeg for Raspberry Pi 4B
+name: Cross-Compile for RaspberryPi4B
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
-
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install toolchain
+    - uses: actions/checkout@v4
+    
+    - name: Setup Toolchain
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends \
-          build-essential \
-          gcc-11-aarch64-linux-gnu \
-          g++-11-aarch64-linux-gnu \
-          binutils-aarch64-linux-gnu \
-          libc6-dev-arm64-cross \
-          qemu-user-static \
-          pkg-config \
-          crossbuild-essential-arm64
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-    - name: Setup sysroot
+    - name: Configure Build
       run: |
-        sudo mkdir -p /usr/aarch64-linux-gnu
-        sudo ln -sf /usr/include /usr/aarch64-linux-gnu/include
-        sudo ln -sf /usr/lib/aarch64-linux-gnu /usr/aarch64-linux-gnu/lib
+        mkdir build && cd build
+        cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake ..
 
-    - name: Set environment
+    - name: Compile
       run: |
-        echo "CC=aarch64-linux-gnu-gcc-11" >> $GITHUB_ENV
-        echo "CXX=aarch64-linux-gnu-g++-11" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
-        echo "PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
-
-    - name: Test compiler
-      run: |
-        echo 'int main(){return 0;}' > test.c
-        aarch64-linux-gnu-gcc-11 test.c -o test
-        qemu-aarch64-static ./test
-        echo "Compiler test exit code: $?"
-
-    - name: Clone FFmpeg
-      run: |
-        git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
-        cd FFmpeg
-
-    - name: Configure FFmpeg
-      run: |
-        cd FFmpeg
-        ./configure \
-          --prefix="/usr/local" \
-          --enable-cross-compile \
-          --cross-prefix=aarch64-linux-gnu- \
-          --target-os=linux \
-          --arch=aarch64 \
-          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3" \
-          --extra-ldflags="-L/usr/aarch64-linux-gnu/lib" \
-          --sysroot=/usr/aarch64-linux-gnu \
-          --pkg-config=$(which pkg-config) \
-          --enable-shared \
-          --enable-pic || { cat ffbuild/config.log; exit 1; }
-
-    - name: Build FFmpeg
-      run: |
-        cd FFmpeg
-        make -j$(nproc)
-
-    - name: Package artifacts
-      run: |
-        cd FFmpeg
-        make install DESTDIR=./install
-        tar -czvf ../ffmpeg_rpi4b.tar.gz -C ./install .
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+        cd build && make -j$(nproc)
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
       with:
-        name: ffmpeg_rpi4b_build
-        path: ffmpeg_rpi4b.tar.gz
-        retention-days: 7
+        name: raspberrypi-bin
+        path: build/
