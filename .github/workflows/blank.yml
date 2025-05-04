@@ -8,90 +8,65 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install full toolchain
       run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
-          autoconf automake build-essential cmake git libtool \
-          libomxil-bellagio-dev libx264-dev libx265-dev libvpx-dev \
-          libmp3lame-dev libopus-dev libvorbis-dev libfreetype6-dev \
-          yasm pkg-config meson ninja-build libdrm-dev \
-          libssl-dev zlib1g-dev ca-certificates \
+          build-essential \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
-          binutils-aarch64-linux-gnu
+          binutils-aarch64-linux-gnu \
+          libc6-dev-arm64-cross \
+          qemu-user-static \
+          crossbuild-essential-arm64
+
+    - name: Setup sysroot
+      run: |
+        sudo mkdir -p /usr/aarch64-linux-gnu
+        sudo ln -s /usr/aarch64-linux-gnu/lib /usr/lib/aarch64-linux-gnu
+        sudo ln -s /usr/include /usr/aarch64-linux-gnu/include
 
     - name: Clone FFmpeg
       run: |
         git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
         cd FFmpeg
 
-    - name: Setup environment
-      run: |
-        echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-        echo "CXX=aarch64-linux-gnu-g++" >> $GITHUB_ENV
-        echo "AR=aarch64-linux-gnu-ar" >> $GITHUB_ENV
-        echo "LD=aarch64-linux-gnu-ld" >> $GITHUB_ENV
-        echo "RANLIB=aarch64-linux-gnu-ranlib" >> $GITHUB_ENV
-        echo "STRIP=aarch64-linux-gnu-strip" >> $GITHUB_ENV
-
     - name: Configure FFmpeg
       run: |
         cd FFmpeg
+        export CC="aarch64-linux-gnu-gcc"
+        export CXX="aarch64-linux-gnu-g++"
+        export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
+        
         ./configure \
           --prefix="/usr/local" \
+          --enable-cross-compile \
+          --cross-prefix=aarch64-linux-gnu- \
+          --target-os=linux \
+          --arch=aarch64 \
+          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3 -I/usr/aarch64-linux-gnu/include" \
+          --extra-ldflags="-L/usr/aarch64-linux-gnu/lib" \
+          --sysroot=/usr/aarch64-linux-gnu \
           --enable-shared \
           --enable-pic \
           --enable-gpl \
           --enable-version3 \
-          --enable-nonfree \
-          --enable-libdrm \
-          --enable-libfreetype \
-          --enable-libmp3lame \
-          --enable-libopus \
-          --enable-libvorbis \
-          --enable-libx264 \
-          --enable-libx265 \
-          --enable-libvpx \
-          --enable-mmal \
-          --enable-omx \
-          --enable-omx-rpi \
-          --enable-v4l2-m2m \
-          --enable-opengl \
-          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3" \
-          --extra-ldflags="-L/opt/vc/lib" \
-          --arch=aarch64 \
-          --target-os=linux \
-          --enable-cross-compile \
-          --cross-prefix=aarch64-linux-gnu- \
-          --enable-neon \
-          --enable-hardcoded-tables \
-          --disable-stripping \
-          --enable-lto || { cat ffbuild/config.log; exit 1; }
+          --enable-nonfree || { cat ffbuild/config.log; exit 1; }
 
-    - name: Build FFmpeg
+    - name: Build and package
       run: |
         cd FFmpeg
-        make -j$(($(nproc) + 1))
-
-    - name: Install to staging
-      run: |
-        cd FFmpeg
-        make install DESTDIR="$HOME/ffmpeg_install"
-
-    - name: Create package
-      run: |
-        mkdir -p artifacts
-        tar -czvf artifacts/ffmpeg_rpi4b.tar.gz -C $HOME/ffmpeg_install usr/local
+        make -j$(nproc)
+        make install DESTDIR=./install
+        tar -czvf ../ffmpeg_build.tar.gz -C ./install .
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ffmpeg_rpi4b_build
-        path: artifacts/ffmpeg_rpi4b.tar.gz
-        retention-days: 7
+        name: ffmpeg_rpi4_build
+        path: ffmpeg_build.tar.gz
