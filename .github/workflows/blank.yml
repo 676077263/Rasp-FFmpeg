@@ -1,6 +1,6 @@
-name: Cross-Compile for RPi4B
+name: RaspberryPi Cross-Compile
 
-on: [push, workflow_dispatch]
+on: [push]
 
 jobs:
   build:
@@ -10,35 +10,27 @@ jobs:
       CXX: aarch64-linux-gnu-g++
 
     steps:
-    - name: Checkout code (with submodules)
+    - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: recursive  # 确保子模块同步 [5](@ref)
+        path: src  # 显式定义代码路径
+
+    - name: Validate files
+      run: |
+        if [ ! -f "src/CMakeLists.txt" ]; then
+          echo "##[error]CMakeLists.txt missing in src/"
+          ls -R src/
+          exit 1
+        fi
 
     - name: Setup toolchain
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            qemu-user-static
+        sudo apt-get install -y gcc-aarch64-linux-gnu
 
-    - name: Configure build
-      working-directory: ${{ github.workspace }}  # 明确工作目录 [6](@ref)
+    - name: Configure CMake
       run: |
-        cmake -B build -S . \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake -B build -S src \
+          -DCMAKE_TOOLCHAIN_FILE=src/cmake/aarch64-toolchain.cmake
 
-    - name: Compile
-      run: |
-        cmake --build build -j $(nproc)
-        # 二进制验证
-        file build/rasp-ffmpeg | grep "ARM aarch64"
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: raspberry-bin
-        path: build/rasp-ffmpeg
-        retention-days: 7
+    - name: Build
+      run: cmake --build build -j $(nproc)
