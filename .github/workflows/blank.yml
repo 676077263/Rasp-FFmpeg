@@ -23,16 +23,17 @@ jobs:
           libmp3lame-dev libopus-dev libvorbis-dev libfreetype6-dev \
           yasm pkg-config meson ninja-build libdrm-dev \
           libssl-dev zlib1g-dev ca-certificates \
-          crossbuild-essential-arm64
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-    - name: Clone FFmpeg (with specific version)
+    - name: Clone FFmpeg (stable release)
       run: |
-        git clone --depth 1 --branch n6.1.1 https://github.com/FFmpeg/FFmpeg.git
+        git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
         cd FFmpeg
 
-    - name: Configure FFmpeg
+    - name: Run configure with debug
       run: |
         cd FFmpeg
+        set -x  # 开启调试输出
         ./configure \
           --prefix="/usr/local" \
           --enable-shared \
@@ -59,12 +60,14 @@ jobs:
           --enable-neon \
           --enable-hardcoded-tables \
           --disable-stripping \
-          --enable-lto || { cat config.log; exit 1; }
+          --enable-lto
+        set +x
+        ls -la  # 显示生成的文件
 
     - name: Build FFmpeg
       run: |
         cd FFmpeg
-        make -j$(($(nproc) + 1)) || { echo "Build failed"; exit 1; }
+        make -j$(($(nproc) + 1))
 
     - name: Install to staging
       run: |
