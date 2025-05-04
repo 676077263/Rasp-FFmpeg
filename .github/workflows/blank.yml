@@ -14,33 +14,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install full toolchain
+    - name: Install toolchain
       run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
           build-essential \
-          gcc-11-aarch64-linux-gnu g++-11-aarch64-linux-gnu \
+          gcc-11-aarch64-linux-gnu \
+          g++-11-aarch64-linux-gnu \
           binutils-aarch64-linux-gnu \
           libc6-dev-arm64-cross \
-          pkg-config-aarch64-linux-gnu \
           qemu-user-static \
+          pkg-config \
           crossbuild-essential-arm64
 
-    - name: Setup environment
+    - name: Setup sysroot
       run: |
-        # 创建必要的sysroot链接
         sudo mkdir -p /usr/aarch64-linux-gnu
-        [ -d "/usr/aarch64-linux-gnu/include" ] || sudo ln -s /usr/include /usr/aarch64-linux-gnu/include
-        [ -d "/usr/aarch64-linux-gnu/lib" ] || sudo ln -s /usr/lib/aarch64-linux-gnu /usr/aarch64-linux-gnu/lib
-        
-        # 设置编译器路径
+        sudo ln -sf /usr/include /usr/aarch64-linux-gnu/include
+        sudo ln -sf /usr/lib/aarch64-linux-gnu /usr/aarch64-linux-gnu/lib
+
+    - name: Set environment
+      run: |
         echo "CC=aarch64-linux-gnu-gcc-11" >> $GITHUB_ENV
         echo "CXX=aarch64-linux-gnu-g++-11" >> $GITHUB_ENV
-        echo "AR=aarch64-linux-gnu-ar" >> $GITHUB_ENV
-        echo "LD=aarch64-linux-gnu-ld" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+        echo "PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
 
-    - name: Test cross compiler
+    - name: Test compiler
       run: |
         echo 'int main(){return 0;}' > test.c
         aarch64-linux-gnu-gcc-11 test.c -o test
@@ -64,6 +64,7 @@ jobs:
           --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3" \
           --extra-ldflags="-L/usr/aarch64-linux-gnu/lib" \
           --sysroot=/usr/aarch64-linux-gnu \
+          --pkg-config=$(which pkg-config) \
           --enable-shared \
           --enable-pic || { cat ffbuild/config.log; exit 1; }
 
