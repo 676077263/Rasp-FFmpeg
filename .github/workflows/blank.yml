@@ -8,13 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install full toolchain
+    - name: Install toolchain
       run: |
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
@@ -23,18 +23,23 @@ jobs:
           binutils-aarch64-linux-gnu \
           libc6-dev-arm64-cross \
           qemu-user-static \
-          crossbuild-essential-arm64
+          crossbuild-essential-arm64 \
+          pkg-config-aarch64-linux-gnu \
+          libgmp-dev:arm64 \
+          libmpfr-dev:arm64 \
+          libmpc-dev:arm64 \
+          libssl-dev:arm64 \
+          nasm
 
     - name: Setup sysroot
       run: |
         sudo mkdir -p /usr/aarch64-linux-gnu
-        sudo ln -s /usr/aarch64-linux-gnu/lib /usr/lib/aarch64-linux-gnu
-        sudo ln -s /usr/include /usr/aarch64-linux-gnu/include
+        sudo apt-get install -y libc6-arm64-cross libstdc++6-arm64-cross
+        sudo ln -sf /usr/aarch64-linux-gnu/lib /usr/lib/aarch64-linux-gnu
+        sudo ln -sf /usr/include /usr/aarch64-linux-gnu/include
 
     - name: Clone FFmpeg
-      run: |
-        git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
-        cd FFmpeg
+      run: git clone --depth 1 --branch release/6.1 https://github.com/FFmpeg/FFmpeg.git
 
     - name: Configure FFmpeg
       run: |
@@ -42,6 +47,7 @@ jobs:
         export CC="aarch64-linux-gnu-gcc"
         export CXX="aarch64-linux-gnu-g++"
         export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
+        export PKG_CONFIG_SYSROOT_DIR="/usr/aarch64-linux-gnu"
         
         ./configure \
           --prefix="/usr/local" \
@@ -49,7 +55,7 @@ jobs:
           --cross-prefix=aarch64-linux-gnu- \
           --target-os=linux \
           --arch=aarch64 \
-          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3 -I/usr/aarch64-linux-gnu/include" \
+          --extra-cflags="-mcpu=cortex-a72 -mtune=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -O3" \
           --extra-ldflags="-L/usr/aarch64-linux-gnu/lib" \
           --sysroot=/usr/aarch64-linux-gnu \
           --enable-shared \
