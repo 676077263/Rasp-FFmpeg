@@ -1,29 +1,50 @@
 name: Cross-Compile for RaspberryPi4B
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      CC: aarch64-linux-gnu-gcc
+      CXX: aarch64-linux-gnu-g++
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Toolchain
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup toolchain
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            qemu-user-static
 
-    - name: Configure Build
+    - name: Prepare sysroot
       run: |
-        mkdir build && cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake ..
+        mkdir -p /opt/raspberrypi/sysroot
+        # 建议通过rsync从真实设备同步系统库
+        # rsync -avz --rsync-path="sudo rsync" pi@raspberrypi:/{lib,usr} /opt/raspberrypi/sysroot/
+
+    - name: Configure build
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Compile
       run: |
-        cd build && make -j$(nproc)
-        
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+        cmake --build build -j $(nproc)
+        # 二进制验证
+        file build/raspberry-app | grep "ARM aarch64"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         name: raspberrypi-bin
-        path: build/
+        path: |
+          build/raspberry-app
+          !**/*.o
+        retention-days: 7
