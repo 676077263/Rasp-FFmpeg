@@ -1,78 +1,85 @@
-#!/bin/bash
+name: Cross Compile FFmpeg for Raspberry Pi 4B
 
-# 交叉编译环境配置
-export ARCH=arm
-export CROSS_COMPILE=arm-linux-gnueabihf-
-export TARGET=armv7l-linux-gnueabihf
-export SYSROOT=/opt/raspberry-pi/sysroot  # 需提前挂载树莓派rootfs到此路径
-export PATH=/opt/gcc-arm-linux-gnueabihf/bin:$PATH
+on:
+  push:
+    branches:
+      - main
 
-# 下载源码（GitHub）
-git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git ffmpeg
-git clone --depth 1 https://code.videolan.org/videolan/x264.git
-git clone --depth 1 https://github.com/mstorsjo/fdk-aac.git
-git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git libx265  # 若需HEVC支持
+jobs:
+  cross_compile:
+    runs-on: ubuntu-latest
 
-# 交叉编译x264
-cd x264
-./configure \
-  --host=$TARGET \
-  --prefix=$SYSROOT/usr \
-  --enable-static \
-  --disable-shared \
-  --enable-pic \
-  --enable-gpl
-make -j$(nproc)
-make install
-cd ..
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-# 交叉编译fdk-aac
-cd fdk-aac
-autoreconf -fiv
-./configure \
-  --host=$TARGET \
-  --prefix=$SYSROOT/usr \
-  --enable-shared \
-  --enable-static
-make -j$(nproc)
-make install
-cd ..
+      # Step 2: Install dependencies for cross-compilation
+      - name: Install cross-compilation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            yasm \
+            git \
+            wget \
+            cmake \
+            curl \
+            python3 \
+            python3-pip \
+            qemu-user-static \
+            gcc-arm-linux-gnueabihf \
+            g++-arm-linux-gnueabihf \
+            libfdk-aac-dev \
+            libx264-dev \
+            libvpx-dev \
+            libopus-dev \
+            libfreetype6-dev \
+            libx265-dev \
+            libbcm-host-dev
 
-# 交叉编译FFmpeg
-cd ffmpeg
-./configure \
-  --prefix=$SYSROOT/usr \
-  --enable-cross-compile \
-  --target-os=linux \
-  --arch=$ARCH \
-  --cross-prefix=$CROSS_COMPILE \
-  --sysroot=$SYSROOT \
-  --enable-gpl \
-  --enable-nonfree \
-  --enable-version3 \
-  --enable-omx-rpi \
-  --enable-mmal \
-  --enable-hwaccel=h264_mmal \
-  --enable-decoder=h264_mmal \
-  --enable-encoder=h264_omx \
-  --enable-libx264 \
-  --enable-libfdk-aac \
-  --enable-protocol=file,http,rtmp \
-  --enable-demuxer=mov,matroska \
-  --enable-muxer=flv,rtmp \
-  --enable-parser=h264,aac \
-  --enable-filter=aresample,scale \
-  --disable-debug \
-  --disable-doc \
-  --disable-programs \
-  --extra-cflags="-O3 -mfpu=neon-vfpv4 -mfloat-abi=hard" \
-  --extra-ldflags="-latomic"
+      # Step 3: Set up the cross-compilation environment
+      - name: Set up cross-compilation environment
+        run: |
+          export CROSS_PREFIX=arm-linux-gnueabihf-
+          export SYSROOT=/path/to/raspberrypi/sysroot
+          export PATH=$CROSS_PREFIX/bin:$PATH
 
-make -j$(nproc)
-make install
-cd ..
+      # Step 4: Download and configure FFmpeg
+      - name: Download and configure FFmpeg
+        run: |
+          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git
+          cd ffmpeg
+          ./configure \
+            --prefix=$SYSROOT/usr \
+            --arch=arm \
+            --target-os=linux \
+            --cross-prefix=$CROSS_PREFIX \
+            --sysroot=$SYSROOT \
+            --enable-cross-compile \
+            --enable-gpl \
+            --enable-nonfree \
+            --enable-libx264 \
+            --enable-libvpx \
+            --enable-libopus \
+            --enable-libfdk-aac \
+            --enable-libfreetype \
+            --enable-libx265 \
+            --enable-bcm_host
 
-echo "编译完成！关键配置说明："
-echo "1. 启用硬件加速：h264_mmal（解码）和h264_omx（编码）"
-echo "2. 优化参数：NEON指令集加速 + 硬浮点优化"
-echo "3. 依赖库：x264（H.264编码）、fdk-aac（AAC音频编码）"
+      # Step 5: Compile FFmpeg for Raspberry Pi 4B
+      - name: Compile FFmpeg
+        run: |
+          make -j$(nproc)
+          make install
+
+      # Step 6: Upload the compiled FFmpeg binary
+      - name: Upload FFmpeg binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ffmpeg-armv7
+          path: /path/to/ffmpeg/binary
