@@ -82,4 +82,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ffmpeg-armv7
-          path: /path/to/ffmpeg/binary
+          path: ffmpeg/ffmpeg  # Adjust if necessary
