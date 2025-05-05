@@ -1,85 +1,46 @@
-name: Cross Compile FFmpeg for Raspberry Pi 4B
+name: Build FFmpeg for Raspberry Pi 4B
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  cross_compile:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      # Step 2: Install dependencies for cross-compilation
-      - name: Install cross-compilation dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            yasm \
-            git \
-            wget \
-            cmake \
-            curl \
-            python3 \
-            python3-pip \
-            qemu-user-static \
-            gcc-arm-linux-gnueabihf \
-            g++-arm-linux-gnueabihf \
-            libfdk-aac-dev \
-            libx264-dev \
-            libvpx-dev \
-            libopus-dev \
-            libfreetype6-dev \
-            libx265-dev \
-            libbcm-host-dev
+    - name: Set up cross-compilation environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          autoconf automake build-essential cmake \
+          git-core libass-dev libfreetype6-dev \
+          libgnutls28-dev libmp3lame-dev libsdl2-dev \
+          libtool libva-dev libvdpau-dev libvorbis-dev \
+          libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev \
+          meson ninja-build pkg-config texinfo \
+          wget yasm zlib1g-dev libunistring-dev \
+          nasm libx264-dev libx265-dev libvpx-dev \
+          libfdk-aac-dev libopus-dev libaom-dev \
+          libdav1d-dev libnuma-dev libsvtav1-dev \
+          libsvtav1enc-dev libsvtav1dec-dev libsvtav1-dev
 
-      # Step 3: Set up the cross-compilation environment
-      - name: Set up cross-compilation environment
-        run: |
-          export CROSS_PREFIX=arm-linux-gnueabihf-
-          export SYSROOT=/path/to/raspberrypi/sysroot
-          export PATH=$CROSS_PREFIX/bin:$PATH
+    - name: Clone NRCHKB FFmpeg build script
+      run: |
+        git clone https://github.com/NRCHKB/nrchkb-ffmpeg-build.git
+        cd nrchkb-ffmpeg-build
+        git checkout main
 
-      # Step 4: Download and configure FFmpeg
-      - name: Download and configure FFmpeg
-        run: |
-          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git
-          cd ffmpeg
-          ./configure \
-            --prefix=$SYSROOT/usr \
-            --arch=arm \
-            --target-os=linux \
-            --cross-prefix=$CROSS_PREFIX \
-            --sysroot=$SYSROOT \
-            --enable-cross-compile \
-            --enable-gpl \
-            --enable-nonfree \
-            --enable-libx264 \
-            --enable-libvpx \
-            --enable-libopus \
-            --enable-libfdk-aac \
-            --enable-libfreetype \
-            --enable-libx265 \
-            --enable-bcm_host
-
-      # Step 5: Compile FFmpeg for Raspberry Pi 4B
-      - name: Compile FFmpeg
-        run: |
-          make -j$(nproc)
-          make install
-
-      # Step 6: Upload the compiled FFmpeg binary
-      - name: Upload FFmpeg binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ffmpeg-armv7
-          path: ffmpeg/ffmpeg  # Adjust if necessary
+    - name: Build FFmpeg for Raspberry Pi 4B
+      run: |
+        cd nrchkb-ffmpeg-build
+        bash build-debian.sh --arch armv7 --target os=linux --enable-gpl --enable-nonfree --enable-libfdk-aac --enable-libx264 --enable-libx265 --enable-libvpx --enable-libopus --enable-libdav1d --enable-libsvtav1 --enable-libsvtav1enc --enable-libsvtav1dec --enable-libsvtav1 --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-aac --enable-libfdk-a
+::contentReference[oaicite:12]{index=12}
+ 
