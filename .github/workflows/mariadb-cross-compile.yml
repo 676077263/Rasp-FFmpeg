@@ -69,7 +69,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_CONFIG=mysql_release \
             -DWITH_SSL=bundled \
-            -DIGNORE_AIO_CHECK=ON
+            -DIGNORE_AIO_CHECK=ON -DSTACK_DIRECTION=1
 
       - name: Build
         working-directory: mariadb-${{ env.MARIADB_VERSION }}
