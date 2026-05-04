@@ -10,6 +10,9 @@ on:
         type: string
         default: '10.5.6'
 
+env:
+  MARIADB_VERSION: ${{ github.event.inputs.mariadb_version || '10.5.6' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,16 +38,16 @@ jobs:
 
       - name: Download MariaDB
         run: |
-          wget https://archive.mariadb.org/mariadb-${{ github.event.inputs.mariadb_version }}/source/mariadb-${{ github.event.inputs.mariadb_version }}.tar.gz
-          tar xzf mariadb-${{ github.event.inputs.mariadb_version }}.tar.gz
+          wget https://archive.mariadb.org/mariadb-${{ env.MARIADB_VERSION }}/source/mariadb-${{ env.MARIADB_VERSION }}.tar.gz
+          tar xzf mariadb-${{ env.MARIADB_VERSION }}.tar.gz
 
       - name: Copy toolchain
         run: |
-          mkdir -p mariadb-${{ github.event.inputs.mariadb_version }}/cmake
-          cp cmake/arm64-linux.cmake mariadb-${{ github.event.inputs.mariadb_version }}/cmake/
+          mkdir -p mariadb-${{ env.MARIADB_VERSION }}/cmake
+          cp cmake/arm64-linux.cmake mariadb-${{ env.MARIADB_VERSION }}/cmake/
 
       - name: Configure
-        working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
+        working-directory: mariadb-${{ env.MARIADB_VERSION }}
         run: |
           cmake . \
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm64-linux.cmake \
@@ -69,11 +72,11 @@ jobs:
             -DIGNORE_AIO_CHECK=ON
 
       - name: Build
-        working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
+        working-directory: mariadb-${{ env.MARIADB_VERSION }}
         run: make -j2
 
       - name: Package
-        working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
+        working-directory: mariadb-${{ env.MARIADB_VERSION }}
         run: |
           mkdir -p ../pkg/usr/local/mariadb
           make install DESTDIR=${{ github.workspace }}/pkg
@@ -81,13 +84,13 @@ jobs:
       - name: Create tarball
         run: |
           cd ${{ github.workspace }}/pkg
-          tar -czvf ../mariadb-${{ github.event.inputs.mariadb_version }}-arm64.tar.gz .
+          tar -czvf ../mariadb-${{ env.MARIADB_VERSION }}-arm64.tar.gz .
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: mariadb-${{ github.event.inputs.mariadb_version }}-arm64
-          assets: mariadb-${{ github.event.inputs.mariadb_version }}-arm64.tar.gz
+          tag_name: mariadb-${{ env.MARIADB_VERSION }}-arm64
+          assets: mariadb-${{ env.MARIADB_VERSION }}-arm64.tar.gz
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
