@@ -17,7 +17,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake libpcre2-dev libboost-all-dev pkg-config
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake libpcre2-dev libboost-all-dev pkg-config libaio-dev zlib1g-dev libncurses5-dev libreadline-dev
 
       - name: Download MariaDB
         run: |
