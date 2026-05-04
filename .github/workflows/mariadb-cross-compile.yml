@@ -4,24 +4,15 @@ on:
   push:
     branches:
       - main
-  
   workflow_dispatch:
     inputs:
       mariadb_version:
-  push:
-    branches:
-      - main
-  
         type: string
         default: '10.5.6'
 
 jobs:
   build:
-    runs-on:
-  push:
-    branches:
-      - main
-   ubuntu-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v5
