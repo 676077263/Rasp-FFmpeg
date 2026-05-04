@@ -5,7 +5,7 @@ on:
     inputs:
       mariadb_version:
         type: string
-        default: '10.5.29'
+        default: '10.5.6'
 
 jobs:
   build:
