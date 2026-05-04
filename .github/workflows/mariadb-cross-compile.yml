@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         
       - name: Install tools
         run: |
@@ -50,7 +50,7 @@ jobs:
           tar -czvf ../mariadb-${{ github.event.inputs.mariadb_version }}-arm64.tar.gz .
 
       - name: Upload Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: mariadb-${{ github.event.inputs.mariadb_version }}-arm64
           assets: mariadb-${{ github.event.inputs.mariadb_version }}-arm64.tar.gz
