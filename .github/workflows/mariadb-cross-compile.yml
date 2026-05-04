@@ -24,10 +24,10 @@ jobs:
           wget https://archive.mariadb.org/mariadb-${{ github.event.inputs.mariadb_version }}/source/mariadb-${{ github.event.inputs.mariadb_version }}.tar.gz
           tar xzf mariadb-${{ github.event.inputs.mariadb_version }}.tar.gz
 
-      - name: Create toolchain file
+      - name: Copy toolchain
         run: |
           mkdir -p mariadb-${{ github.event.inputs.mariadb_version }}/cmake
-          printf 'SET(CMAKE_SYSTEM_NAME Linux)\nSET(CMAKE_SYSTEM_PROCESSOR aarch64)\nSET(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)\nSET(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)\nSET(CMAKE_FIND_ROOT_PATH /usr/aarch64-linux-gnu)\nSET(CMAKE_CROSSCOMPILING TRUE)\nSET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\nSET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\nSET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n' > mariadb-${{ github.event.inputs.mariadb_version }}/cmake/arm64-linux.cmake
+          cp cmake/arm64-linux.cmake mariadb-${{ github.event.inputs.mariadb_version }}/cmake/
 
       - name: Configure
         working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
