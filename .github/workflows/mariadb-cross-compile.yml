@@ -19,20 +19,19 @@ jobs:
         
       - name: Install tools
         run: |
-          sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get install -y \
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu \
             cmake \
-            libpcre2-dev:arm64 \
+            libpcre2-dev \
             libboost-all-dev \
             pkg-config \
-            libaio-dev:arm64 \
-            zlib1g-dev:arm64 \
-            libncurses5-dev:arm64 \
-            libreadline-dev:arm64 \
-            libssl-dev:arm64
+            libaio-dev \
+            zlib1g-dev \
+            libncurses5-dev \
+            libreadline-dev \
+            libssl-dev
 
       - name: Download MariaDB
         run: |
