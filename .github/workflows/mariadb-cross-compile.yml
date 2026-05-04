@@ -16,8 +16,20 @@ jobs:
         
       - name: Install tools
         run: |
+          sudo dpkg --add-architecture arm64
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake libpcre2-dev libboost-all-dev pkg-config libaio-dev zlib1g-dev libncurses5-dev libreadline-dev
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            cmake \
+            libpcre2-dev:arm64 \
+            libboost-all-dev \
+            pkg-config \
+            libaio-dev:arm64 \
+            zlib1g-dev:arm64 \
+            libncurses5-dev:arm64 \
+            libreadline-dev:arm64 \
+            libssl-dev:arm64
 
       - name: Download MariaDB
         run: |
@@ -32,7 +44,27 @@ jobs:
       - name: Configure
         working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
         run: |
-          cmake . -DCMAKE_TOOLCHAIN_FILE=cmake/arm64-linux.cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb -DSYSCONFDIR=/etc -DWITH_ARIA_STORAGE_ENGINE=1 -DWITH_XTRADB_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_PARTITION_STORAGE_ENGINE=1 -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_FEDERATED_STORAGE_ENGINE=1 -DEXTRA_CHARSETS=all -DDEFAULT_CHARSET=utf8mb4 -DDEFAULT_COLLATION=utf8mb4_general_ci -DWITH_READLINE=1 -DWITH_EMBEDDED_SERVER=1 -DENABLED_LOCAL_INFILE=1 -DWITHOUT_TOKUDB=1 -DCMAKE_BUILD_TYPE=Release -DBUILD_CONFIG=mysql_release -DWITH_SSL=bundled
+          cmake . \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/arm64-linux.cmake \
+            -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb \
+            -DSYSCONFDIR=/etc \
+            -DWITH_ARIA_STORAGE_ENGINE=1 \
+            -DWITH_XTRADB_STORAGE_ENGINE=1 \
+            -DWITH_INNOBASE_STORAGE_ENGINE=1 \
+            -DWITH_PARTITION_STORAGE_ENGINE=1 \
+            -DWITH_MYISAM_STORAGE_ENGINE=1 \
+            -DWITH_FEDERATED_STORAGE_ENGINE=1 \
+            -DEXTRA_CHARSETS=all \
+            -DDEFAULT_CHARSET=utf8mb4 \
+            -DDEFAULT_COLLATION=utf8mb4_general_ci \
+            -DWITH_READLINE=1 \
+            -DWITH_EMBEDDED_SERVER=1 \
+            -DENABLED_LOCAL_INFILE=1 \
+            -DWITHOUT_TOKUDB=1 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_CONFIG=mysql_release \
+            -DWITH_SSL=bundled \
+            -DIGNORE_AIO_CHECK=ON
 
       - name: Build
         working-directory: mariadb-${{ github.event.inputs.mariadb_version }}
