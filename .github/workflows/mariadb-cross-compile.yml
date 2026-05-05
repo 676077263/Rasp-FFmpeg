@@ -37,9 +37,7 @@ jobs:
             libssl-dev \
             libgnutls28-dev \
             libgpg-error-dev \
-            libgcrypt20-dev \
-            libncurses5-dev:arm64 \
-            libncursesw5-dev:arm64
+            libgcrypt20-dev
 
       - name: Download MariaDB
         run: |
