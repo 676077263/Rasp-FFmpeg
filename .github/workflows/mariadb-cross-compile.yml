@@ -62,6 +62,7 @@ jobs:
             -DDEFAULT_CHARSET=utf8mb4 \
             -DDEFAULT_COLLATION=utf8mb4_general_ci \
             -DWITHOUT_CLIENT=ON \
+            -DWITHOUT_READLINE=ON \
             -DWITHOUT_SERVER=OFF \
             -DWITH_ARIA_STORAGE_ENGINE=1 \
             -DWITH_XTRADB_STORAGE_ENGINE=1 \
