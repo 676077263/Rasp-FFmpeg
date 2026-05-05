@@ -9,5 +9,6 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 SET(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-# Only disable Readline (not Curses to avoid REQUIRED conflict)
+# Disable Readline - set Curses as found to bypass REQUIRED check
 SET(CMAKE_DISABLE_FIND_PACKAGE_Readline ON)
+SET(Curses_FOUND TRUE)
