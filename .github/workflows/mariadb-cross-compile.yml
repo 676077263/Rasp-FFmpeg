@@ -32,9 +32,12 @@ jobs:
             pkg-config \
             libaio-dev \
             zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo-dev libgnutls28-dev libidn2-dev libldap2-dev libcurl4-openssl-dev \
+            libncurses5-dev libncursesw5-dev libtinfo-dev libidn2-dev libldap2-dev libcurl4-openssl-dev \
             libreadline-dev \
-            libssl-dev
+            libssl-dev \
+            libgnutls28-dev \
+            libgpg-error-dev \
+            libgcrypt20-dev
 
       - name: Download MariaDB
         run: |
@@ -63,13 +66,23 @@ jobs:
             -DDEFAULT_CHARSET=utf8mb4 \
             -DDEFAULT_COLLATION=utf8mb4_general_ci \
             -DWITH_READLINE=1 \
-            -DWITH_EMBEDDED_SERVER=1 \
-            -DENABLED_LOCAL_INFILE=1 -DWITHOUT_AUTHENTICATION_CLIENT=OFF -DWITHOUT_SERVER=OFF \
+            -DENABLED_LOCAL_INFILE=1 \
             -DWITHOUT_TOKUDB=1 \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_CONFIG=mysql_release \
-            -DWITH_SSL=bundled -DMYSQL_CLIENT_DEPENDENCY=OFF \
-            -DIGNORE_AIO_CHECK=ON -DSTACK_DIRECTION=1 -DCURSES_INCLUDE_PATH=/usr/include -DCURSES_LIBRARY=/usr/lib/aarch64-linux-gnu/libncursesw.so.5
+            -DWITH_SSL=bundled \
+            -DIGNORE_AIO_CHECK=ON \
+            -DSTACK_DIRECTION=1 \
+            -DCURSES_INCLUDE_PATH=/usr/include \
+            -DCURSES_LIBRARY=/usr/lib/aarch64-linux-gnu/libncursesw.so.5 \
+            -DWITHOUT_CLIENT=ON \
+            -DPLUGIN_AUTH_PAM=NO \
+            -DWITHOUT_ROCKSDB=1 \
+            -DWITHOUT_SPIDER=1 \
+            -DWITHOUT_OQGRAPH=1 \
+            -DWITHOUT_MROONGA=1 \
+            -DWITHOUT_CONNECT=1 \
+            -DWITH_UNIT_TESTS=OFF
 
       - name: Build
         working-directory: mariadb-${{ env.MARIADB_VERSION }}
