@@ -67,7 +67,7 @@ jobs:
             -DEXTRA_CHARSETS=all \
             -DDEFAULT_CHARSET=utf8mb4 \
             -DDEFAULT_COLLATION=utf8mb4_general_ci \
-            -DWITH_READLINE=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_Readline=ON \
             -DENABLED_LOCAL_INFILE=1 \
             -DWITHOUT_TOKUDB=1 \
             -DCMAKE_BUILD_TYPE=Release \
