@@ -37,7 +37,9 @@ jobs:
             libssl-dev \
             libgnutls28-dev \
             libgpg-error-dev \
-            libgcrypt20-dev
+            libgcrypt20-dev \
+            libncurses5-dev:arm64 \
+            libncursesw5-dev:arm64
 
       - name: Download MariaDB
         run: |
@@ -67,7 +69,7 @@ jobs:
             -DEXTRA_CHARSETS=all \
             -DDEFAULT_CHARSET=utf8mb4 \
             -DDEFAULT_COLLATION=utf8mb4_general_ci \
-            -DCMAKE_DISABLE_FIND_PACKAGE_Readline=ON \
+            -DWITH_READLINE=1 \
             -DENABLED_LOCAL_INFILE=1 \
             -DWITHOUT_TOKUDB=1 \
             -DCMAKE_BUILD_TYPE=Release \
