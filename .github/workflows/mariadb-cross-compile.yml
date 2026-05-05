@@ -79,8 +79,8 @@ jobs:
             -DWITH_UNIT_TESTS=OFF \
             -DPLUGIN_AUTH_PAM=NO \
             -DWITH_SSL=OFF \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_CONFIG=mysql_release
+            -DIGNORE_AIO_CHECK=ON \
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         working-directory: mariadb-${{ env.MARIADB_VERSION }}
