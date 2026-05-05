@@ -56,6 +56,11 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=cmake/arm64-linux.cmake \
             -DCMAKE_INSTALL_PREFIX=/usr/local/mariadb \
             -DSYSCONFDIR=/etc \
+            -DINSTALL_LIBDIR=lib \
+            -DINSTALL_INCLUDEDIR=include \
+            -DINSTALL_MYSQLSHAREDIR=share/mysql \
+            -DDEFAULT_CHARSET=utf8mb4 \
+            -DDEFAULT_COLLATION=utf8mb4_general_ci \
             -DWITHOUT_CLIENT=ON \
             -DWITHOUT_SERVER=OFF \
             -DWITH_ARIA_STORAGE_ENGINE=1 \
@@ -64,24 +69,18 @@ jobs:
             -DWITH_PARTITION_STORAGE_ENGINE=1 \
             -DWITH_MYISAM_STORAGE_ENGINE=1 \
             -DWITH_FEDERATED_STORAGE_ENGINE=1 \
-            -DEXTRA_CHARSETS=all \
-            -DDEFAULT_CHARSET=utf8mb4 \
-            -DDEFAULT_COLLATION=utf8mb4_general_ci \
-            -DWITHOUT_CLIENT=ON \
-            -DENABLED_LOCAL_INFILE=1 \
+            -DEXTRA_CHARSETS=none \
             -DWITHOUT_TOKUDB=1 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_CONFIG=mysql_release \
-            -DWITH_SSL=bundled \
-            -DIGNORE_AIO_CHECK=ON \
-            -DPLUGIN_AUTH_PAM=NO \
             -DWITHOUT_ROCKSDB=1 \
             -DWITHOUT_SPIDER=1 \
             -DWITHOUT_OQGRAPH=1 \
             -DWITHOUT_MROONGA=1 \
             -DWITHOUT_CONNECT=1 \
             -DWITH_UNIT_TESTS=OFF \
-            -DCONNECT_WITH_LIBMARIADB=OFF
+            -DPLUGIN_AUTH_PAM=NO \
+            -DWITH_SSL=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_CONFIG=mysql_release
 
       - name: Build
         working-directory: mariadb-${{ env.MARIADB_VERSION }}
