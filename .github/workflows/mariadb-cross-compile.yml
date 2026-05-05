@@ -22,22 +22,24 @@ jobs:
         
       - name: Install tools
         run: |
+          # Enable multiarch for ARM64
+          sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get install -y \
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu \
             cmake \
-            libpcre2-dev \
-            libboost-all-dev \
+            libpcre2-dev:arm64 \
+            libboost-all-dev:arm64 \
             pkg-config \
-            libaio-dev \
-            zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo-dev libidn2-dev libldap2-dev libcurl4-openssl-dev \
-            libreadline-dev \
-            libssl-dev \
-            libgnutls28-dev \
-            libgpg-error-dev \
-            libgcrypt20-dev
+            libaio-dev:arm64 \
+            zlib1g-dev:arm64 \
+            libncurses5-dev:arm64 \
+            libncursesw5-dev:arm64 \
+            libtinfo-dev:arm64 \
+            libreadline-dev:arm64 \
+            libssl-dev:arm64 \
+            libgnutls28-dev:arm64
 
       - name: Download MariaDB
         run: |
